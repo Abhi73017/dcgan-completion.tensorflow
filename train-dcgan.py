@@ -7,15 +7,13 @@
 #   + License: MIT
 
 import os
-import scipy.misc
+
 import numpy as np
-
-from model import DCGAN
-from utils import pp, visualize, to_json
-
 import tensorflow as tf
 
-flags = tf.app.flags
+from model import DCGAN
+
+flags = tf.compat.v1.flags
 flags.DEFINE_integer("epoch", 25, "Epoch to train [25]")
 flags.DEFINE_float("learning_rate", 0.0002, "Learning rate of for adam [0.0002]")
 flags.DEFINE_float("beta1", 0.5, "Momentum term of adam [0.5]")
@@ -32,9 +30,9 @@ if not os.path.exists(FLAGS.checkpoint_dir):
 if not os.path.exists(FLAGS.sample_dir):
     os.makedirs(FLAGS.sample_dir)
 
-config = tf.ConfigProto()
+config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
-with tf.Session(config=config) as sess:
+with tf.compat.v1.Session(config=config) as sess:
     dcgan = DCGAN(sess, image_size=FLAGS.image_size, batch_size=FLAGS.batch_size,
                   is_crop=False, checkpoint_dir=FLAGS.checkpoint_dir)
 

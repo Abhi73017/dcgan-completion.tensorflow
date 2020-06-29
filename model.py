@@ -5,13 +5,11 @@
 #   + License: MIT
 
 from __future__ import division
+
+import itertools
 import os
 import time
-import math
-import itertools
 from glob import glob
-import tensorflow as tf
-from six.moves import xrange
 
 from ops import *
 from utils import *
@@ -83,13 +81,13 @@ class DCGAN(object):
         self.model_name = "DCGAN.model"
 
     def build_model(self):
-        self.is_training = tf.placeholder(tf.bool, name='is_training')
-        self.images = tf.placeholder(
+        self.is_training = tf.compat.v1.placeholder(tf.bool, name='is_training')
+        self.images = tf.compat.v1.placeholder(
             tf.float32, [None] + self.image_shape, name='real_images')
         self.lowres_images = tf.reduce_mean(tf.reshape(self.images,
             [self.batch_size, self.lowres_size, self.lowres,
              self.lowres_size, self.lowres, self.c_dim]), [2, 4])
-        self.z = tf.placeholder(tf.float32, [None, self.z_dim], name='z')
+        self.z = tf.compat.v1.placeholder(tf.float32, [None, self.z_dim], name='z')
         self.z_sum = tf.summary.histogram("z", self.z)
 
         self.G = self.generator(self.z)
@@ -122,21 +120,21 @@ class DCGAN(object):
         self.g_loss_sum = tf.summary.scalar("g_loss", self.g_loss)
         self.d_loss_sum = tf.summary.scalar("d_loss", self.d_loss)
 
-        t_vars = tf.trainable_variables()
+        t_vars = tf.compat.v1.trainable_variables()
 
         self.d_vars = [var for var in t_vars if 'd_' in var.name]
         self.g_vars = [var for var in t_vars if 'g_' in var.name]
 
-        self.saver = tf.train.Saver(max_to_keep=1)
+        self.saver = tf.compat.v1.train.Saver(max_to_keep=1)
 
         # Completion.
-        self.mask = tf.placeholder(tf.float32, self.image_shape, name='mask')
-        self.lowres_mask = tf.placeholder(tf.float32, self.lowres_shape, name='lowres_mask')
+        self.mask = tf.compat.v1.placeholder(tf.float32, self.image_shape, name='mask')
+        self.lowres_mask = tf.compat.v1.placeholder(tf.float32, self.lowres_shape, name='lowres_mask')
         self.contextual_loss = tf.reduce_sum(
-            tf.contrib.layers.flatten(
+            tf.compat.v1.layers.flatten(
                 tf.abs(tf.multiply(self.mask, self.G) - tf.multiply(self.mask, self.images))), 1)
         self.contextual_loss += tf.reduce_sum(
-            tf.contrib.layers.flatten(
+            tf.compat.v1.layers.flatten(
                 tf.abs(tf.multiply(self.lowres_mask, self.lowres_G) - tf.multiply(self.lowres_mask, self.lowres_images))), 1)
         self.perceptual_loss = self.g_loss
         self.complete_loss = self.contextual_loss + self.lam*self.perceptual_loss
@@ -147,20 +145,20 @@ class DCGAN(object):
         np.random.shuffle(data)
         assert(len(data) > 0)
 
-        d_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1) \
+        d_optim = tf.compat.v1.train.AdamOptimizer(config.learning_rate, beta1=config.beta1) \
                           .minimize(self.d_loss, var_list=self.d_vars)
-        g_optim = tf.train.AdamOptimizer(config.learning_rate, beta1=config.beta1) \
+        g_optim = tf.compat.v1.train.AdamOptimizer(config.learning_rate, beta1=config.beta1) \
                           .minimize(self.g_loss, var_list=self.g_vars)                
         try:
-            tf.global_variables_initializer().run()
+            tf.compat.v1.global_variables_initializer().run()
         except:
-            tf.initialize_all_variables().run()
+            tf.compat.v1.initialize_all_variables().run()
 
-        self.g_sum = tf.summary.merge(
+        self.g_sum = tf.compat.v1.summary.merge(
             [self.z_sum, self.d__sum, self.G_sum, self.d_loss_fake_sum, self.g_loss_sum])
-        self.d_sum = tf.summary.merge(
+        self.d_sum = tf.compat.v1.summary.merge(
             [self.z_sum, self.d_sum, self.d_loss_real_sum, self.d_loss_sum])
-        self.writer = tf.summary.FileWriter("./logs", self.sess.graph)
+        self.writer = tf.compat.v1.summary.FileWriter("./logs", self.sess.graph)
 
         sample_z = np.random.uniform(-1, 1, size=(self.sample_size , self.z_dim))
         sample_files = data[0:self.sample_size]
@@ -194,11 +192,11 @@ Initializing a new one.
 
 """)
 
-        for epoch in xrange(config.epoch):
+        for epoch in range(config.epoch):
             data = dataset_files(config.dataset)
             batch_idxs = min(len(data), config.train_size) // self.batch_size
 
-            for idx in xrange(0, batch_idxs):
+            for idx in range(0, batch_idxs):
                 batch_files = data[idx*config.batch_size:(idx+1)*config.batch_size]
                 batch = [get_image(batch_file, self.image_size, is_crop=self.is_crop)
                          for batch_file in batch_files]
@@ -254,9 +252,9 @@ Initializing a new one.
         make_dir('logs')
 
         try:
-            tf.global_variables_initializer().run()
+            tf.compat.v1.global_variables_initializer().run()
         except:
-            tf.initialize_all_variables().run()
+            tf.compat.v1.initialize_all_variables().run()
 
         isLoaded = self.load(self.checkpoint_dir)
         assert(isLoaded)
@@ -291,7 +289,7 @@ Initializing a new one.
         else:
             assert(False)
 
-        for idx in xrange(0, batch_idxs):
+        for idx in range(0, batch_idxs):
             l = idx*self.batch_size
             u = min((idx+1)*self.batch_size, nImgs)
             batchSz = u-l
@@ -329,7 +327,7 @@ Initializing a new one.
                             ' '.join(['z{}'.format(zi) for zi in range(self.z_dim)]) +
                             '\n')
 
-            for i in xrange(config.nIter):
+            for i in range(config.nIter):
                 fd = {
                     self.z: zhats,
                     self.mask: mask,
@@ -402,7 +400,7 @@ Initializing a new one.
                     assert(False)
 
     def discriminator(self, image, reuse=False):
-        with tf.variable_scope("discriminator") as scope:
+        with tf.compat.v1.variable_scope("discriminator") as scope:
             if reuse:
                 scope.reuse_variables()
 
@@ -416,7 +414,7 @@ Initializing a new one.
             return tf.nn.sigmoid(h4), h4
 
     def generator(self, z):
-        with tf.variable_scope("generator") as scope:
+        with tf.compat.v1.variable_scope("generator") as scope:
             self.z_, self.h0_w, self.h0_b = linear(z, self.gf_dim*8*4*4, 'g_h0_lin', with_w=True)
     
             # TODO: Nicer iteration pattern here. #readability

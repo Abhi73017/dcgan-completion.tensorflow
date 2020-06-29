@@ -38,9 +38,9 @@ args = parser.parse_args()
 
 assert(os.path.exists(args.checkpointDir))
 
-config = tf.ConfigProto()
+config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
-with tf.Session(config=config) as sess:
+with tf.compat.v1.Session(config=config) as sess:
     dcgan = DCGAN(sess, image_size=args.imgSize,
                   batch_size=min(64, len(args.imgs)),
                   checkpoint_dir=args.checkpointDir, lam=args.lam)
